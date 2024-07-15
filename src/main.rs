@@ -8,24 +8,26 @@ use unidecode::unidecode;
 use signmaker::p3d::P3D;
 use signmaker::{io::Input, io::Output, p3d};
 use ril::{self, Font, Image, Rgba, TextLayout, TextSegment};
-fn main() {
+fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let path = Path::new(&args[1]);
-    //let sign_type = &args[1]; -- Future Feature for multiple signs
+    let sign_type: u8 = (&args[2]).parse().expect("Not Valid");
     assert!(path.is_file(), "{} does not exist", &args[1]);
+    assert!((1..5).contains(&sign_type), "Sign Type not valid");
 
     let mapname = path.file_name().unwrap().to_string_lossy().trim_end_matches(".hpp").to_string();
-    create_output_folder(&mapname);
-    move_textures(&mapname);
-    let  (mut start_p3d, mut end_p3d) = prep_signs(&mapname);
+    create_output_folder(&mapname)?;
+    let  (mut start_p3d, mut end_p3d) = prep_signs(&sign_type);
     
     let town_names = collect_town_names(&args[1]);
 
     for town in town_names.iter() {
-        create_town_name_png(&mapname, town);
+        create_town_name_png(&mapname, town, &sign_type, 1024, 128);
         create_town_sign(&mapname, town, &mut start_p3d,&mut end_p3d);
     }
-    write_config(&mapname, town_names);
+    write_config(&mapname, town_names)?;
+
+    Ok(())
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
@@ -62,60 +64,51 @@ fn create_output_folder (map_name: &String) -> std::io::Result<()> {
     };
 
     fs::create_dir(format!("./{}", folder_name))?;
+    fs::create_dir(format!("./{}/data", folder_name))?;
     
     Ok(())
 }
 
 
-fn move_textures (map_name: &String) -> std::io::Result<()> {
-    let folder_name = map_name.clone().add("_signs");
+fn prep_signs(sign_type: &u8) -> (P3D, P3D) {
 
-    fs::create_dir(format!("./{}/data", folder_name))?;
-    fs::copy("./data/textures/sign_base_as.paa", format!("./{}/data/sign_base_as.paa", folder_name))?;
-    fs::copy("./data/textures/sign_base_co.paa", format!("./{}/data/sign_base_co.paa", folder_name))?;
-    fs::copy("./data/textures/sign_base_nohq.paa", format!("./{}/data/sign_base_smdi.paa", folder_name))?;
-    fs::copy("./data/textures/sign_base_smdi.paa", format!("./{}/data/sign_base_nohq.paa", folder_name))?;
-
-    if let Ok(lines) = read_lines("./data/textures/sign_base.rvmat") {
-        let mut file = File::create(format!("./{}/data/sign_base.rvmat", folder_name))?;
-        for line in lines.flatten() {
-            if line.contains("FOLDERNAME") {
-                file.write_all(&line.replace("FOLDERNAME", &folder_name).as_bytes())?;
-            } else {
-                file.write_all(line.as_bytes())?;
-            };
-            file.write_all(b"\n")?;
-        };
+    let start_file = match sign_type {
+        1 => File::open("./data/models/altis_startsign.p3d").unwrap(),
+        2 => File::open("./data/models/livonia_startsign.p3d").unwrap(),
+        3 => File::open("./data/models/malden_startsign.p3d").unwrap(),
+        4 => File::open("./data/models/tanoa_startsign.p3d").unwrap(),
+        _ => File::open("./data/models/altis_startsign.p3d").unwrap(),
     };
-    Ok(())
-}
 
-fn prep_signs(map_name: &String) -> (P3D, P3D) {
-    let folder_name = map_name.clone().add("_signs");
+    let end_file = match sign_type {
+        1 => File::open("./data/models/altis_endsign.p3d").unwrap(),
+        2 => File::open("./data/models/livonia_endsign.p3d").unwrap(),
+        3 => File::open("./data/models/malden_endsign.p3d").unwrap(),
+        4 => File::open("./data/models/tanoa_endsign.p3d").unwrap(),
+        _ => File::open("./data/models/altis_endsign.p3d").unwrap(),
+    };
 
-    let start_file = File::open("./data/models/startsign_european.p3d").unwrap();
-    let end_file = File::open("./data/models/endsign_european.p3d").unwrap();
     let mut start_input: Input = Input::File(start_file);
     let mut end_input: Input = Input::File(end_file);
-    let mut start_p3d = p3d::P3D::read(&mut start_input).unwrap();
-    let mut end_p3d = p3d::P3D::read(&mut end_input).unwrap();
 
-    let texture = format!("{}\\data\\sign_base_co.paa", folder_name);
-    let material = format!("{}\\data\\sign_base.rvmat", folder_name);
-    for n in 0..start_p3d.lods[0].faces.len() {
-        start_p3d.lods[0].faces[n].texture = texture.to_string();
-        start_p3d.lods[0].faces[n].material = material.to_string();
-        end_p3d.lods[0].faces[n].texture = texture.to_string();
-        end_p3d.lods[0].faces[n].material = material.to_string();
-    }
+    let start_p3d = p3d::P3D::read(&mut start_input).unwrap();
+    let end_p3d = p3d::P3D::read(&mut end_input).unwrap();
     return (start_p3d, end_p3d);
 }
 
-fn create_town_name_png(map_name: &String, town_name: &String) {
+fn create_town_name_png(map_name: &String, town_name: &String, sign_type: &u8, width: u32, height: u32) {
     let folder_name = map_name.clone().add("_signs");
-    let mut image = Image::new(1024, 128, Rgba::transparent());
+    let mut image = Image::new(width, height, Rgba::transparent());
 
     let font = Font::open("./data/fonts/din1451alt.ttf", 128.0).unwrap();
+
+    let text_colour = match sign_type {
+        1 => Rgba::black(),
+        2 => Rgba::black(),
+        3 => Rgba::black(),
+        4 => Rgba::white(),
+        _ => Rgba::black(),
+    };
 
     let (x, y) = image.center();
     let text = TextLayout::new()
@@ -123,16 +116,16 @@ fn create_town_name_png(map_name: &String, town_name: &String) {
         .with_wrap(ril::WrapStyle::Word)
         .with_width(image.width())
         .with_position(x, y)
-        .with_segment(&TextSegment::new(&font, town_name, Rgba::white()));
+        .with_segment(&TextSegment::new(&font, town_name, text_colour));
 
     image.draw(&text);
-    image.save_inferred(format!("./{}/data/{}.png", folder_name, unidecode(town_name).replace(" ", "_"))).unwrap();
+    image.save_inferred(format!("./{}/data/{}_ca.png", folder_name, unidecode(town_name).replace(" ", "_"))).unwrap();
 }
 
 fn create_town_sign(map_name: &String, town_name: &String, start_sign: &mut P3D, end_sign: &mut P3D) {
     let folder_name = map_name.clone().add("_signs");
-    start_sign.lods[0].faces[0].texture = format!("{}\\data\\{}.paa", folder_name, unidecode(town_name).replace(" ", "_")).to_string();
-    end_sign.lods[0].faces[0].texture = format!("{}\\data\\{}.paa", folder_name, unidecode(town_name).replace(" ", "_")).to_string();
+    start_sign.lods[0].faces[0].texture = format!("{}\\data\\{}_ca.paa", folder_name, unidecode(town_name).replace(" ", "_")).to_string();
+    end_sign.lods[0].faces[0].texture = format!("{}\\data\\{}_ca.paa", folder_name, unidecode(town_name).replace(" ", "_")).to_string();
 
     let start_file = File::create(format!("./{}/rnc_{}_start.p3d", folder_name, unidecode(town_name).replace(" ", "_"))).unwrap();
     let end_file = File::create(format!("./{}/rnc_{}_end.p3d", folder_name, unidecode(town_name).replace(" ", "_"))).unwrap();
