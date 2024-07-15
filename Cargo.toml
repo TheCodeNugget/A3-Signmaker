@@ -1,0 +1,10 @@
+[package]
+name = "signmaker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ril = { version = "0", features = ["all"] }
+byteorder = "1.5.*"
+linked-hash-map = "0.5.*"
+unidecode = "0.3.*"
