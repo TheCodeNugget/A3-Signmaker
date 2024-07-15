@@ -25,7 +25,7 @@ Where:
 `.\terrainname.hpp` is the header file that Terrain Builder creates when exporting a WRP
 
 ### :warning: Important
-Program uses the the name of `.hpp` file to name the files it generates, TB exports this file as `**yourterrainsname**.hpp`
+Program uses the the name of `.hpp` file to name the files it generates, TB exports this file with the name of your terrain.
 
 `1` is the selection for the type of sign you'd like created.
 
