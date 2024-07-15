@@ -18,7 +18,7 @@ Grab the latest release from
 Download the latest version and unpack and run with terminal of your choice.
 
 ```console
-A3-Signmaker> .\A3-Signmaker.exe .\terrainname.hpp 1
+.\A3-Signmaker.exe .\terrainname.hpp 1
 ```
 Where:
 
