@@ -27,6 +27,8 @@ Where:
 ### :warning: Important
 Program uses the the name of `.hpp` file to name the files it generates, TB exports this file with the name of your terrain.
 
+The program will create signs for keypoints with types: `NameCityCapital`, `NameCity` & `nameVillage`
+
 `1` is the selection for the type of sign you'd like created.
 
 ### Sign Types
