@@ -12,8 +12,8 @@ Program to generate town signs for A3 terrains, written in rust
 
 ## :hammer_and_wrench: Usage
 Grab the latest release from 
-<img alt="GitHub" src="https://img.shields.io/github/license/TheCodeNugget/A3-Signmaker?style=for-the-badge&logo=gitbook&logoColor=D9E0EE&labelColor=302D41&color=f38ba8">
-  <a href="https://github.com/TheCodeNugget/Signmaker/releases/latest">
+<a href="https://github.com/TheCodeNugget/Signmaker/releases/latest">
+	  <img alt="GitHub release (with filter)" src="https://img.shields.io/github/v/release/TheCodeNugget/A3-Signmaker?style=for-the-badge&logo=github&color=F2CDCD&logoColor=D9E0EE&labelColor=302D41">
   
 Download the latest version and unpack and run with terminal of your choice.
 
