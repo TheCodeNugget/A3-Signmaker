@@ -1,9 +1,9 @@
-use std::fs;
-use std::fs::File;
+
 use std::env;
-use std::io::{self, BufRead, Write};
 use std::ops::Add;
 use std::path::Path;
+use std::fs::{self, File};
+use std::io::{self, BufRead, Write};
 use unidecode::unidecode;
 use signmaker::p3d::P3D;
 use signmaker::{io::Input, io::Output, p3d};
@@ -22,7 +22,7 @@ fn main() -> std::io::Result<()> {
     let town_names = collect_town_names(&args[1]);
 
     for town in town_names.iter() {
-        create_town_name_png(&mapname, town, &sign_type, 1024, 128);
+        create_town_name_png(&mapname, town, &sign_type, 1024, 256);
         create_town_sign(&mapname, town, &mut start_p3d,&mut end_p3d);
     }
     write_config(&mapname, town_names)?;
@@ -47,7 +47,7 @@ fn collect_town_names(keypoints: &String) -> Vec<String> {
             };
             if line.contains("type=\"") {
                 let type_buffer = line.trim().trim_start_matches("type=\"").trim_end_matches("\";").to_string();
-                if (type_buffer.to_lowercase() == "namecity".to_lowercase()) || (type_buffer.to_lowercase() == "namevillage".to_lowercase()) {
+                if (type_buffer.to_lowercase() == "namecitycapital") || (type_buffer.to_lowercase() == "namecity") || (type_buffer.to_lowercase() == "namevillage") {
                     town_names.push(name_buffer.clone());
                 }
             }
@@ -100,7 +100,7 @@ fn create_town_name_png(map_name: &String, town_name: &String, sign_type: &u8, w
     let folder_name = map_name.clone().add("_signs");
     let mut image = Image::new(width, height, Rgba::transparent());
 
-    let font = Font::open("./data/fonts/din1451alt.ttf", 128.0).unwrap();
+    let font = Font::open("./data/fonts/din1451alt.ttf", 192.0).unwrap();
 
     let text_colour = match sign_type {
         1 => Rgba::black(),
@@ -113,11 +113,8 @@ fn create_town_name_png(map_name: &String, town_name: &String, sign_type: &u8, w
     let (x, y) = image.center();
     let text = TextLayout::new()
         .centered()
-        .with_wrap(ril::WrapStyle::Word)
-        .with_width(image.width())
         .with_position(x, y)
         .with_segment(&TextSegment::new(&font, town_name, text_colour));
-
     image.draw(&text);
     image.save_inferred(format!("./{}/data/{}_ca.png", folder_name, unidecode(town_name).replace(" ", "_"))).unwrap();
 }
